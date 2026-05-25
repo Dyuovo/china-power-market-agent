@@ -25,6 +25,7 @@ tools.sessions.visibility = all
 | 小枢 | `agent:main:feishu:direct:<owner_open_id>` |
 | 小霆 | `agent:xiaoting:feishu:direct:<xiaoting_open_id>` |
 | 小电 | `agent:xiaodian:feishu:direct:<xiaodian_open_id>` |
+| 小衡 | `agent:xiaoheng:feishu:direct:<xiaoheng_open_id>` |
 
 ## 任务账本联动
 
@@ -65,7 +66,29 @@ python3 <workspace>/08_TOOLS/task_ledger.py a2a-template TASK-YYYYMMDD-001 --to 
 上下文: 相关文件、记忆检索结果、用户原话摘要
 风险: low | medium | high
 回报要求: 完成后 TASK_DONE；阻塞时 TASK_BLOCKED
+data: {...}  ← 可选 JSON，结构化传递关键参数
 ```
+
+### data 字段（结构化参数）
+
+`TASK_ASSIGN` 和 `TASK_DONE` 消息**应包含** `data` JSON 字段，让接收方无需从自然语言解析参数：
+
+```json
+{
+  "province": "江苏",
+  "report_type": "policy_pulse",
+  "template": "prompts/policy_pulse.md",
+  "data_source": "近7天政策抓取",
+  "output_dir": "outputs/policy_pulse/",
+  "deadline": "2026-05-20T18:00+08:00"
+}
+```
+
+规则：
+- Markdown 字段给人读，`data` 给 Agent 机读
+- `data` 可选，但 `TASK_ASSIGN` 强烈建议包含
+- 字段名用 snake_case，值可嵌套
+- 常用字段：`province`、`report_type`、`template`、`data_source`、`output_dir`、`deadline`、`task_id_list`
 
 ## 标准示例
 
@@ -84,6 +107,7 @@ python3 <workspace>/08_TOOLS/task_ledger.py a2a-template TASK-YYYYMMDD-001 --to 
 上下文: prompts/policy_pulse.md；近 7 天政策抓取数据
 风险: medium
 回报要求: 完成后 TASK_DONE；阻塞时 TASK_BLOCKED
+data: {"province":"江苏","report_type":"policy_pulse","template":"prompts/policy_pulse.md","data_source":"近7天政策抓取"}
 ```
 
 ### TASK_ACK
@@ -108,6 +132,7 @@ python3 <workspace>/08_TOOLS/task_ledger.py a2a-template TASK-YYYYMMDD-001 --to 
 结果: 已完成江苏政策 Pulse。
 产出: <workspace>/02_XIAOTING/...
 风险: 已标注数据源和发布日期。
+data: {"output_file":"outputs/policy_pulse_20260520.md","feishu_url":"https://bytedance.feishu.cn/docx/...","key_findings":["发现1","发现2"]}
 ```
 
 ### TASK_BLOCKED
@@ -156,4 +181,4 @@ python3 <workspace>/08_TOOLS/task_ledger.py a2a-template TASK-YYYYMMDD-001 --to 
 |---|---|---|
 | v0.1 | 2026-05-13 | 初始版本，定义四种消息类型和格式 |
 | v0.2 | 2026-05-14 | 记录实际 sessionKey、回执格式、频率限制和 A2A 实测结果 |
-| v0.3 | 2026-05-20 | 标准化 TASK_ASSIGN/TASK_ACK/TASK_DONE/TASK_BLOCKED，并绑定任务账本 |
+| v0.4 | 2026-05-25 | P0-1：A2A 消息增加结构化 `data` JSON 字段，Markdown 给人 + JSON 给 Agent |
