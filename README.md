@@ -1,123 +1,158 @@
-# China Power Market AI Agent System
+# 中国电力市场 AI Agent 系统
 
-> A production-grade multi-agent AI system for power market analysis, learning, and operations.  
-> Built on [OpenClaw](https://github.com/openclaw/openclaw).  
-> Governance-and-execution pattern with structured memory, task ledger, and automated pipelines.
+> 面向电力市场分析、学习与运营的多 Agent 生产级 AI 系统。  
+> 基于 [OpenClaw](https://github.com/openclaw/openclaw) 构建。  
+> 治理-执行分层架构 + 结构化记忆 + 任务账本 + 自动化管线。
 
-## What is this?
+---
 
-This repository documents the **architecture of a personal multi-agent AI system** running in production — governance layer + domain-specific agents + infrastructure tier.
+## 这是什么
 
-It's a reference implementation showing how to organize multiple LLM agents with clear boundaries, shared memory, task tracking, and automated operations.
+一套**正在生产环境运行**的个人多 Agent AI 系统的架构文档——包含治理层、领域执行层和基础设施层。
 
-## Agents
+这是一份参考实现，展示如何用清晰的边界、共享记忆、任务追踪和自动化运维来组织多个 LLM Agent 协同工作。
 
-| Agent | Role | Layer |
+---
+
+## Agent 体系
+
+| Agent | 角色 | 层级 |
 |---|---|---|
-| **小枢 (Xiaoshu)** 🧭 | Governance — routing, system rules, task ledger, memory, backups | Governance |
-| **小霆 (Xiaoting)** ⚡ | Power market execution — daily/weekly reports, pricing, policy, data pipelines | Execution |
-| **小电 (Xiaodian)** ⚡ | Learning & research — quiz generation, grading, spaced-repetition review, knowledge base | Execution |
+| **小枢** 🧭 | 治理调度——任务分流、系统规则、任务账本、记忆归档、备份 | 治理层 |
+| **小霆** ⚡ | 电力市场执行——日报/周报、电价分析、政策解读、数据管线 | 执行层 |
+| **小电** ⚡ | 学习研究——每日推送、出题批改、间隔复习、知识库建设 | 执行层 |
 
-## Architecture
+---
+
+## 系统架构
 
 ```
-                    Owner (messaging)
+                    用户（飞书消息）
                          │
               ┌──────────┼──────────┐
               │     OpenClaw Gateway      │
-              │   sessions / cron / config  │
+              │   会话 / 定时任务 / 配置    │
               └──────────┼──────────┘
                          │
-                   小枢 🧭 (Governance)
+                   小枢 🧭（治理层）
                          │
         ┌────────────────┼────────────────┐
         │                                 │
     小霆 ⚡                            小电 ⚡
-   Power Market                    Learning & Research
+   电力市场                           学习研究
+   业务执行                           知识建设
         │                                 │
         └────────────────┬────────────────┘
                          │
               ┌──────────┴──────────┐
-              │   Infrastructure     │
+              │      基础设施层       │
               │                     │
-              │  Memory archiving    │
-              │  Semantic retrieval  │
-              │  Task ledger         │
-              │  Health monitoring   │
-              │  Tool scripts        │
-              │  Automated backups   │
+              │  记忆归档 & 压缩      │
+              │  语义检索索引         │
+              │  任务账本 & 复盘      │
+              │  系统健康监控         │
+              │  工具脚本 & 备份      │
               └─────────────────────┘
 ```
 
-## Key Design Decisions
+---
 
-### 1. Governance-Execution Separation
-A governance agent (小枢) routes tasks and maintains system rules; execution agents handle domain work. No agent does everything — boundaries prevent confusion and overlap.
+## 核心设计
 
-### 2. Three-Version Learning Pipeline
-Daily learning uses a three-version workflow:
-- **V1**: Content + quiz questions → pushed to owner
-- **V2**: Owner's answers filled in
-- **V3**: Graded with detailed feedback → archived, database-synced
+### 1. 治理-执行分离
 
-### 3. Structured Memory System
-Daily memory → compressed archives → semantic retrieval index → nightly reflection & insights. Defaults to local SQLite + hash vectors — no external API or Ollama dependency.
+治理 Agent（小枢）负责判断任务归属、维护系统规则、协调跨 Agent 协作；执行 Agent 各自聚焦领域工作。**不做全能 Agent——边界清晰，才能长期不混乱。**
 
-### 4. Task Ledger with A2A Protocol
-Cross-agent and cross-day tasks tracked in a lightweight SQLite ledger with standardized `TASK_ASSIGN / ACK / DONE / BLOCKED` message types.
+### 2. 三版制学习管线
 
-### 5. Pre-Submit Self-Review
-Before publishing any output (report, learning push, config change), agents self-review against a checklist — no separate review agent needed.
+每日学习推送走三版流程：
 
-## Repository Contents
+| 版本 | 内容 | 处理 |
+|---|---|---|
+| V1 题目版 | 知识点 + 练习题 + 每日一问 | 飞书推送 |
+| V2 回答版 | V1 + 主人作答 | 问答对照 |
+| V3 批注版 | V2 + 逐题批改 + 得分 + 亮点/待加强 | 归档 + **强制写入数据库** |
+
+### 3. 结构化记忆系统
 
 ```
-├── AGENTS.md                          # Global system rules
-├── TOOLS.md                           # Tool registry
-├── SOUL.md                            # Governance agent persona
-├── IDENTITY.md                        # Governance agent identity
-└── 00_GOVERNANCE/
-    ├── SYSTEM_ARCHITECTURE.md         # Full architecture design (v1.1)
-    ├── AGENT_REGISTRY.md              # Agent registration & boundaries
-    ├── AGENT_MSG_SPEC.md              # Inter-agent message protocol
-    ├── ACTION_REGISTRY.md             # Callable action cards
-    ├── TASK_ROUTING_RULES.md          # Task routing logic
-    ├── PRE_SUBMIT_REVIEW.md           # Pre-submit checklist
-    ├── DATABASE_CONVENTION.md         # Database governance
-    └── DATA_GOVERNANCE.md             # Data access & sharing rules
+每日记忆 → 归档压缩 → 语义检索索引 → 夜间反思 & 洞察
 ```
 
-## What's NOT Included
+默认使用本地 SQLite + 哈希向量，不依赖 Ollama 或外部 API。每天凌晨自动压缩、索引、反思。
 
-- ❌ Agent memory, conversations, daily logs
-- ❌ Personal data (health, business, financial)
-- ❌ Database contents (SQLite files, indexed knowledge)
-- ❌ Outputs (reports, analysis, graded answers)
-- ❌ Credentials, API keys, tokens
-- ❌ Cron job configuration
-- ❌ OpenClaw runtime configs
+### 4. 任务账本 + A2A 协议
 
-## Stack
+跨日任务、跨 Agent 任务、阻塞任务全部进入 SQLite 任务账本，配合标准化消息类型：
 
-- **Runtime**: [OpenClaw](https://github.com/openclaw/openclaw)
-- **Messaging**: Feishu (Lark) integration
-- **Storage**: SQLite (task ledger, memory index, learning database)
-- **Models**: DeepSeek V3/V4, configurable per-agent
-- **Tools**: Python scripts for backups, health checks, memory management
-- **Hosting**: Docker on WSL2
+| 类型 | 用途 |
+|---|---|
+| `TASK_ASSIGN` | 分派任务 |
+| `TASK_ACK` | 确认接收 |
+| `TASK_DONE` | 完成回报 |
+| `TASK_BLOCKED` | 阻塞说明 |
 
-## Why Share This?
+每周一自动生成周复盘，每月 1 日生成月复盘。
 
-Personal AI systems are mostly ad-hoc. This repository shows a structured approach: clear agent boundaries, governance protocols, automated operations, and a memory system that works without external APIs.
+### 5. 提交前自审
 
-If you're building a multi-agent system — whether personal or team-oriented — the patterns here (task ledger, A2A protocol, pre-submit review, three-version learning) are directly reusable.
+日报、周报、学习推送、系统改动、飞书外发——**所有输出必须先过一遍自审清单**。不新增审稿 Agent，各自检查：日期对不对、来源真不真、有没有越界、有没有高风险操作。
 
-## ⚠️ Disclaimer
+---
 
-This is a **de-identified export** of a running personal system. All personal identifiers, paths, credentials, and private data have been removed. The architecture and governance patterns are the focus — not the specific domain configurations.
+## 仓库文件
 
-No warranty. Use at your own risk.
+```
+├── AGENTS.md                    # 全局运行规则
+├── TOOLS.md                     # 工具注册表
+├── SOUL.md                      # 治理 Agent 人设
+├── IDENTITY.md                  # 治理 Agent 身份
+├── 00_GOVERNANCE/
+│   ├── SYSTEM_ARCHITECTURE.md   # 完整架构设计 v1.1
+│   ├── AGENT_REGISTRY.md        # Agent 注册与边界
+│   ├── AGENT_MSG_SPEC.md        # Agent 间消息协议
+│   ├── ACTION_REGISTRY.md       # 可调用动作注册
+│   ├── TASK_ROUTING_RULES.md    # 任务分流逻辑
+│   ├── PRE_SUBMIT_REVIEW.md     # 提交前自审清单
+│   ├── DATABASE_CONVENTION.md   # 数据库治理规范
+│   └── DATA_GOVERNANCE.md       # 数据访问与共享规则
+```
 
-## License
+---
 
-MIT
+## 不包含的内容
+
+- ❌ Agent 记忆、对话记录、每日日志
+- ❌ 个人数据（健康、业务、财务）
+- ❌ 数据库内容（SQLite 文件、索引知识库）
+- ❌ 产出文件（报告、分析、批改记录）
+- ❌ 凭据、API 密钥、Token
+- ❌ 定时任务配置
+- ❌ OpenClaw 运行时配置
+
+---
+
+## 技术栈
+
+| 组件 | 选型 |
+|---|---|
+| 运行时 | [OpenClaw](https://github.com/openclaw/openclaw) |
+| 消息通道 | 飞书（Lark） |
+| 存储 | SQLite（任务账本 / 记忆索引 / 学习数据库） |
+| 模型 | DeepSeek V3/V4，可按 Agent 独立配置 |
+| 工具 | Python 脚本（备份 / 健康检查 / 记忆管理 / 批改入库） |
+| 部署 | Docker on WSL2 |
+
+---
+
+## 为什么开源
+
+个人 AI 系统大多是临时拼凑的。这个仓库展示了一套有结构的方法：清晰的 Agent 边界、治理协议、自动化运维、以及不依赖外部 API 的记忆系统。
+
+无论你在搭建个人还是团队的多 Agent 系统，这些模式——任务账本、A2A 协议、提交前自审、三版制学习——都可以直接复用。
+
+---
+
+> 本文档是运行中系统的**脱敏导出版本**。所有个人标识、路径、凭据和隐私数据均已移除。架构和治理模式是关注重点，而非具体业务配置。
+
+MIT License
