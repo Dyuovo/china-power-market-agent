@@ -1,0 +1,52 @@
+# Personal/private data
+*.sqlite
+*.db
+*.json
+*.jsonl
+
+# Sessions & conversations
+sessions/
+conversations/
+*.session
+
+# Outputs
+07_OUTPUTS/
+outputs/
+*daily_report*
+*日报*
+*weekly_report*
+*周报*
+
+# Memory contents
+06_DATA/99_memory/
+MEMORY/
+*daily/*
+*STATE.md
+*MEMORY.md
+
+# Backups & cache
+backups/
+__pycache__/
+*.pyc
+.cache/
+
+# Credentials & config
+.env
+*.secret
+*.token
+*credentials*
+openclaw.json
+openclaw-data/
+
+# Large binary
+*.whl
+*.tar.gz
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
