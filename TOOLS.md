@@ -17,7 +17,7 @@
 ## 当前关键环境
 
 - 新治理入口:`<workspace>`
-- OpenClaw 工程:`<openclaw_repo>`
+- OpenClaw 工程:`/mnt/d/claw/openclaw`
 - OpenClaw 数据:`<openclaw_data_dir>`
 - 小霆运行区:`<workspace>/02_XIAOTING`
 - 小电运行区:`<workspace>/03_XIAODIAN`
@@ -61,6 +61,29 @@ python3 08_TOOLS/daily_placeholder.py
 python3 08_TOOLS/daily_placeholder.py --date 2026-05-17
 ```
 
+> P0-2（2026-05-25）：占位符填充后自动调用 `memory_auto_extract.py` 从 sessions_archive 提取实际事件，覆盖占位符。
+
+### 记忆自动提取（P0-2，2026-05-25 上线）
+
+当 Agent 忘记写 daily 或只写了占位符时，自动从会话存档提取关键事件补全。
+
+```bash
+# 提取指定 Agent 昨日记忆
+python3 08_TOOLS/memory_auto_extract.py --agent xiaodian
+
+# 提取所有 Agent
+python3 08_TOOLS/memory_auto_extract.py --date 2026-05-24
+
+# 干跑（不写入）
+python3 08_TOOLS/memory_auto_extract.py --date 2026-05-24 --dry-run
+```
+
+策略：
+- 已有完整 daily → NOOP（保留人工记录）
+- 占位符 → ADD（从会话提取覆盖）
+- 无记录 + 有会话 → ADD（新建）
+- 无会话 → 补占位记录
+
 ### 输出位置
 - 记忆块：`06_DATA/99_memory/daily/{agent}/`
 - 记忆树索引：`06_DATA/99_memory/MEMORY_TREE.md`
@@ -70,7 +93,7 @@ python3 08_TOOLS/daily_placeholder.py --date 2026-05-17
 
 ### 长期记忆检索
 
-多个 Agent 的长期记忆统一进入本地检索索引。默认不需要 Ollama，也不需要在线模型；当前环境没有 `chromadb` 时自动使用 SQLite + 本地哈希向量。
+四 Agent 的长期记忆统一进入本地检索索引。默认不需要 Ollama，也不需要在线模型；当前环境没有 `chromadb` 时自动使用 SQLite + 本地哈希向量。
 
 ```bash
 # 重建索引
@@ -80,7 +103,7 @@ python3 08_TOOLS/memory_semantic_index.py index
 python3 08_TOOLS/memory_semantic_index.py status
 
 # 跨 Agent 搜索
-python3 08_TOOLS/memory_semantic_index.py search "backup drive 备份 掉挂载" -n 5
+python3 08_TOOLS/memory_semantic_index.py search "E盘 备份 掉挂载" -n 5
 
 # 限定某个 Agent
 ```
@@ -137,10 +160,8 @@ python3 08_TOOLS/task_review.py monthly
 
 ```bash
 # 运行健康检查，刷新 SYSTEM_DASHBOARD.md，并自动建账
-python3 08_TOOLS/health_monitor.py
 
 # 只看健康，不写任务账本
-python3 08_TOOLS/health_monitor.py --no-ledger
 ```
 
 输出位置：
@@ -177,14 +198,14 @@ python3 <workspace>/08_TOOLS/create_feishu_doc.py --agent xiaodian <markdown文�
 
 1. 先把要推的内容写成完整 Markdown 文件，保存到本 Agent 的输出目录
 2. 调用脚本时务必带 `--agent` 参数，文档会创建在对应 Agent 名下
-3. 脚本会自动从 `<feishu_editor_openids>`、`<feishu_agent_owner_openid>` 和 `AI_SYSTEM/openclaw.json` 的飞书 allowlist 收集 owner 的 open_id，并授予 `full_access`
+3. 脚本会自动从 `FEISHU_DOC_EDITOR_OPENIDS`、`FEISHU_<AGENT>_OWNER_OPENID` 和 `AI_SYSTEM/openclaw.json` 的飞书 allowlist 收集 Joey 的 open_id，并授予 `full_access`
 4. 只有脚本输出 `Edit access confirmed` 且最终 `Done!` 时，才算文档交付成功
 5. 脚本返回 `doc_id` 和飞书文档链接（`https://bytedance.feishu.cn/docx/...`）
 6. 把链接返回给用户
 
 ### 凭据
 
-每个 Agent 有独立的飞书应用凭据（`<feishu_app_id>/<feishu_app_secret>` / `<feishu_xiaoshu_*>` / `<feishu_xiaodian_*>`），Gateway 环境均已配置。
+每个 Agent 有独立的飞书应用凭据（`FEISHU_APP_ID/SECRET` / `FEISHU_XIAOSHU_*` / `FEISHU_XIAODIAN_*`），Gateway 环境均已配置。
 
 ### 限制
 
@@ -192,12 +213,12 @@ python3 <workspace>/08_TOOLS/create_feishu_doc.py --agent xiaodian <markdown文�
 - 自动剥离 Markdown 文件开头的 YAML front matter
 - 代码块会按逐行文本写入
 - 大文档分批写入(每批 50 block),有 429 限流重试
-- 提供给 owner 的飞书文档必须可编辑；如果授权失败或脚本非零退出，不得把链接作为成功结果返回
+- 提供给 Joey 的飞书文档必须可编辑；如果授权失败或脚本非零退出，不得把链接作为成功结果返回
 
 ### 禁止
 
 - 不要用 exec curl 手搓飞书 API
-- 不要读取或打印 `<feishu_credentials>` secret、`tenant_access_token`、`app_secret`
+- 不要读取或打印 `FEISHU_*` secret、`tenant_access_token`、`app_secret`
 - 不要把 feishu_doc 当作 OpenClaw 内置工具--它不存在,用上面的 Python 脚本
 
 ## 图片 OCR
@@ -285,11 +306,15 @@ python3 03_XIAODIAN/RUNTIME/power_market_learning_agent/tools/grade_to_db.py \
 - 运行后检查输出确认 `attempts` 行数增加
 - 可用 knowledge_tag：`spot_price_basics` `congestion_management` `medium_long_term` `deviation_assessment` `market_structure` `green_power_direct_connection` `policy` `business_model_canvas` `ai_pm` `rag`
 
+
+
 ### 数据库位置
 
 | 数据库 | 路径 | 用途 |
 |---|---|---|
 
+
+```bash
 # 单日汇总
 
 # 7日周报
@@ -302,3 +327,38 @@ python3 03_XIAODIAN/RUNTIME/power_market_learning_agent/tools/grade_to_db.py \
 ### 写入数据
 
 - 小枢负责校验、备份、汇总
+
+## 统一工具注册表（2026-05-25 上线）
+
+所有工具统一登记在 `00_GOVERNANCE/TOOL_REGISTRY.md`，YAML 格式，包含 id/command/params/agents/failure_mode。各 Agent 的 TOOLS.md 引用注册表，不各自维护路径。
+
+## 输出格式模板（2026-05-25 上线）
+
+关键输出类型定义在 `00_GOVERNANCE/OUTPUT_SCHEMAS/README.md`，包含 5 种 Schema：
+- 电力市场日报
+- 电力市场周报
+- 学习推送（三版制 V1→V2→V3）
+- 政策 Pulse
+
+每种 Schema 定义 `required` 和 `recommended` 字段，用于提交前自审和 TASK_DONE 自动校验。
+
+## 知识图谱（2026-05-25 上线）
+
+轻量级三元组知识图谱，用于回答关系型问题（如"电价冲高的因果链"）：
+
+```bash
+# 播种核心关系
+python3 08_TOOLS/triple_store.py seed
+
+# 查询
+python3 08_TOOLS/triple_store.py query "阻塞管理"
+
+# 路径查找
+python3 08_TOOLS/triple_store.py path "光伏出力增加" "午间电价下跌"
+
+# 从文本抽取
+python3 08_TOOLS/triple_store.py extract --text "新能源出力增加导致电价下跌"
+```
+
+存储：`06_DATA/06_学习培训/triple_store.sqlite`  
+预置 21 条核心电力市场关系种子。后续可从 ChromaDB 知识库批量抽取。

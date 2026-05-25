@@ -25,7 +25,6 @@ tools.sessions.visibility = all
 | 小枢 | `agent:main:feishu:direct:<owner_open_id>` |
 | 小霆 | `agent:xiaoting:feishu:direct:<xiaoting_open_id>` |
 | 小电 | `agent:xiaodian:feishu:direct:<xiaodian_open_id>` |
-| 小衡 | `agent:xiaoheng:feishu:direct:<xiaoheng_open_id>` |
 
 ## 任务账本联动
 
