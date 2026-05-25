@@ -1,7 +1,8 @@
-# OpenClaw Multi-Agent Architecture
+# China Power Market AI Agent System
 
-> A production-grade personal AI system using a governance-and-execution pattern.  
-> Built on [OpenClaw](https://github.com/openclaw/openclaw).
+> A production-grade multi-agent AI system for power market analysis, learning, and operations.  
+> Built on [OpenClaw](https://github.com/openclaw/openclaw).  
+> Governance-and-execution pattern with structured memory, task ledger, and automated pipelines.
 
 ## What is this?
 
